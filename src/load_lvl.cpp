@@ -55,7 +55,7 @@ vector <vector<int> > load_lvl () {
         height = (int) sizes.y;
     }
 
-    vector<vector<int> > tile_grid(height, vector<int> (width, 0));
+    vector<vector<int> > tile_grid(height, vector<int> (width, -1));
 
     if (FileExists("level.lvl")) {
         std::ifstream input("level.lvl", std::ios::binary);
