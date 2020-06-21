@@ -13,7 +13,6 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     vector <vector<int> > tile_grid = load_lvl();
-    // cout << "\n\nHello\n\n" << endl;
 
     int screenWidth = 1248;
     int screenHeight = 800;

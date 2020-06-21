@@ -7,10 +7,21 @@
 
 using namespace std;
 
+class Tile {
+public:
+    int id;
+    int x;
+    int y;
+    int width;
+    int height;
+};
+
 int get_byte_val(vector<int> byte_arr, int index);
 int check_val(int val);
 void save_lvl(vector<vector<int> > bytes);
 vector<int> bytes_from_int(int num);
+Tile checkTile(vector <vector<int> >& level_data, int id, int checkX, int checkY);
+void Log_lvl(vector <vector<int> > level_data);
 
 vector <vector<int> > load_lvl () {
     int width = 0;
@@ -32,8 +43,6 @@ vector <vector<int> > load_lvl () {
         if ((bytes[0], bytes[1], bytes[2], bytes[3]) == (80, 76, 86, 76)) {
             width = get_byte_val(bytes, 4);
             height = get_byte_val(bytes, 6);
-            cout << width << endl;
-            cout << height << endl;
         }
 
         // ======int to signed char======
@@ -46,7 +55,7 @@ vector <vector<int> > load_lvl () {
         height = (int) sizes.y;
     }
 
-    vector<vector<int> > tile_grid(height, vector<int> (width, -1));
+    vector<vector<int> > tile_grid(height, vector<int> (width, 0));
 
     if (FileExists("level.lvl")) {
         std::ifstream input("level.lvl", std::ios::binary);
@@ -68,9 +77,9 @@ vector <vector<int> > load_lvl () {
         while (get_byte_val(bytes, index) != 65535) {
             for (int h = 0; h < get_byte_val(bytes, index + 8); h++) {
                 for (int w = 0; w < get_byte_val(bytes, index + 6); w++) {
-                    tile_grid[get_byte_val(bytes, index + 4 + h)][get_byte_val(bytes, index + 2 + w)] = get_byte_val(bytes, index)-1;
-                    // cout << get_byte_val(bytes, index) << ", " << get_byte_val(bytes, index + 2) << ", " << get_byte_val(bytes, index + 4) << ", " << get_byte_val(bytes, index + 6) << ", " << get_byte_val(bytes, index + 8) <<  endl;
+                    tile_grid[get_byte_val(bytes, index + 4) + h][get_byte_val(bytes, index + 2) + w] = get_byte_val(bytes, index)-1;
                 }
+                // cout << get_byte_val(bytes, index) << ", " << get_byte_val(bytes, index + 2) << ", " << get_byte_val(bytes, index + 4) << ", " << get_byte_val(bytes, index + 6) << ", " << get_byte_val(bytes, index + 8) <<  endl;
             }
             index += 10;
             // cout << get_byte_val(bytes, index) << ", " << get_byte_val(bytes, index+2) << ", " << get_byte_val(bytes, index+4) << ", " << get_byte_val(bytes, index+6) << ", " << get_byte_val(bytes, index+8) << "\n";
@@ -92,6 +101,7 @@ int get_byte_val(vector<int> byte_arr, int index) {
 
 void save_lvl(vector <vector<int> > lvl_data) {
     int id;
+    Tile sav_tile;
 
     vector<int> bytes{80, 76, 86, 76};
     bytes.insert(bytes.end(), {bytes_from_int(lvl_data[0].size())[0], bytes_from_int(lvl_data[0].size())[1]});
@@ -107,10 +117,12 @@ void save_lvl(vector <vector<int> > lvl_data) {
         for (int x = 0; x < lvl_data[1].size(); x++) {
             id = lvl_data[y][x];
             if (id > -1) {
-                bytes.insert(bytes.end(), {bytes_from_int(id + 1)[0], bytes_from_int(id + 1)[1]});
-                bytes.insert(bytes.end(), {bytes_from_int(x)[0], bytes_from_int(x)[1]});
-                bytes.insert(bytes.end(), {bytes_from_int(y)[0], bytes_from_int(y)[1]});
-                bytes.insert(bytes.end(), {0, 1, 0, 1});
+                sav_tile = checkTile(lvl_data, id, x, y);
+                bytes.insert(bytes.end(), {bytes_from_int(sav_tile.id)[0], bytes_from_int(sav_tile.id)[1]});
+                bytes.insert(bytes.end(), {bytes_from_int(sav_tile.x)[0], bytes_from_int(sav_tile.x)[1]});
+                bytes.insert(bytes.end(), {bytes_from_int(sav_tile.y)[0], bytes_from_int(sav_tile.y)[1]});
+                bytes.insert(bytes.end(), {bytes_from_int(sav_tile.width)[0], bytes_from_int(sav_tile.width)[1]});
+                bytes.insert(bytes.end(), {bytes_from_int(sav_tile.height)[0], bytes_from_int(sav_tile.height)[1]});
             }
         }
     }
@@ -137,4 +149,34 @@ vector<int> bytes_from_int(int num) {
     }
     arr[1] = num;
     return arr;
+}
+
+Tile checkTile(vector <vector<int> >& level_data, int id, int checkX, int checkY) {
+    Tile resTile = {id+1, checkX, checkY, 0, 0};
+    bool yLoop = true;
+    for (int x = checkX; x < level_data[0].size(); x++) {
+        if (level_data[checkY][x] == id) {
+            resTile.width++;
+            // level_data[checkY][x] = -1;
+        } else {
+            break;
+        }
+    }
+    for (int y = checkY; y < level_data.size(); y++) {
+        for (int x = checkX; x < resTile.width + checkX; x++) {
+            if (level_data[y][x] != id) {
+                yLoop = false;
+                break;
+            }
+        }
+        if (!yLoop) {
+            break;
+        } else {
+            resTile.height++;
+            for (int x = checkX; x < resTile.width + checkX; x++) {
+                level_data[y][x] = -1;
+            }
+        }
+    }
+    return resTile;
 }
