@@ -1,18 +1,8 @@
-#include "raylib.h"
-#include "helper_functions.h"
-// #include <iostream>
-#include <time.h>
-#include <vector>
-#include "load_lvl.h"
-#include "get_size.h"
-#include <math.h>
-#include "raygui.h"
-
-using namespace std;
+#include "Red_Shell.h"
 
 int main(int argc, char* argv[])
 {
-    vector <vector<int> > tile_grid = load_lvl();
+    std::vector <std::vector<int> > tile_grid = load_lvl();
 
     int screenWidth = 1248;
     int screenHeight = 800;
@@ -190,7 +180,7 @@ int main(int argc, char* argv[])
             if (height != tile_grid.size() || width != tile_grid[0].size()) {
                 int og_width = tile_grid[0].size();
                 int og_height = tile_grid.size();
-                vector<vector<int> > buff = tile_grid;
+                std::vector<std::vector<int> > buff = tile_grid;
                 tile_grid.clear();
                 if (height <= og_height) {
                     if (width <= og_width) {
@@ -231,7 +221,7 @@ int main(int argc, char* argv[])
                             for (int x = 0; x < og_width; x++) {
                                 tile_grid[y].push_back(buff[y][x]);
                             }
-                            for (int x = 0; x < width - og_height; x++) {
+                            for (int x = 0; x < width - og_width; x++) {
                                 tile_grid[y].push_back(-1);
                             }
                         }
@@ -243,12 +233,6 @@ int main(int argc, char* argv[])
                         }
                     }
                 }
-                // while (offX + 1024 > width * 32) {
-                //     offX--;
-                // }
-                // while (offY + 768 > height * 32) {
-                //     offY--;
-                // }
             }
             SetExitKey(KEY_ESCAPE);
             SetConfigFlags(!FLAG_WINDOW_UNDECORATED);
@@ -351,12 +335,11 @@ int main(int argc, char* argv[])
                 DrawText(FormatText("Y: %i", offY), 1072 + (160 - MeasureText(FormatText("Y: %i", offY), 20)) / 2, 335, 20, RED);
                 DrawText(FormatText("Speed: %i", speed), 1072 + (160 - MeasureText(FormatText("Speed: %i", speed), 20)) / 2, 370, 20, BLUE);
             EndScissorMode();
-            // DrawFPS(10, 10);
         EndDrawing();
     }
  
     CloseWindow();
     save_lvl(tile_grid);
-
+    
     return 0;
 }

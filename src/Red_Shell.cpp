@@ -1,29 +1,6 @@
-#include "raylib.h"
-#include <vector>
-#include <fstream>
-#include <iterator>
-#include "get_size.h"
-#include <iostream>
+#include "Red_Shell.h"
 
-using namespace std;
-
-class Tile {
-public:
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-};
-
-int get_byte_val(vector<int> byte_arr, int index);
-int check_val(int val);
-void save_lvl(vector<vector<int> > bytes);
-vector<int> bytes_from_int(int num);
-Tile checkTile(vector <vector<int> >& level_data, int id, int checkX, int checkY);
-void Log_lvl(vector <vector<int> > level_data);
-
-vector <vector<int> > load_lvl () {
+std::vector <std::vector<int> > load_lvl () {
     int width = 0;
     int height = 0;
     if (FileExists("level.lvl")) {
@@ -44,18 +21,13 @@ vector <vector<int> > load_lvl () {
             width = get_byte_val(bytes, 4);
             height = get_byte_val(bytes, 6);
         }
-
-        // ======int to signed char======
-        // signed char test = 61;
-        // cout << "\n\n" << test << "\n\n" << endl;
-
     } else {
         Vector2 sizes = get_size(width, height);
         width = (int) sizes.x;
         height = (int) sizes.y;
     }
 
-    vector<vector<int> > tile_grid(height, vector<int> (width, -1));
+    std::vector<std::vector<int> > tile_grid(height, std::vector<int> (width, -1));
 
     if (FileExists("level.lvl")) {
         std::ifstream input("level.lvl", std::ios::binary);
@@ -70,7 +42,6 @@ vector <vector<int> > load_lvl () {
             if (bytes[i] < 0) {
                 bytes[i] += 256;
             }
-            // cout << bytes[i] << endl;
         }
         int bg_num = get_byte_val(bytes, 8);
         int index = 14;
@@ -79,40 +50,48 @@ vector <vector<int> > load_lvl () {
                 for (int w = 0; w < get_byte_val(bytes, index + 6); w++) {
                     tile_grid[get_byte_val(bytes, index + 4) + h][get_byte_val(bytes, index + 2) + w] = get_byte_val(bytes, index)-1;
                 }
-                // cout << get_byte_val(bytes, index) << ", " << get_byte_val(bytes, index + 2) << ", " << get_byte_val(bytes, index + 4) << ", " << get_byte_val(bytes, index + 6) << ", " << get_byte_val(bytes, index + 8) <<  endl;
             }
             index += 10;
-            // cout << get_byte_val(bytes, index) << ", " << get_byte_val(bytes, index+2) << ", " << get_byte_val(bytes, index+4) << ", " << get_byte_val(bytes, index+6) << ", " << get_byte_val(bytes, index+8) << "\n";
         }
     }
-    // for (int i = 0; i < 10; i++) {
-    //     for (int j = 0; j < tile_grid[i].size(); j++) {
-    //         cout << tile_grid[i][j] << " ";
-    //     }
-    //     cout << '\n';
-    // }
-    // cout << tile_grid << endl;
     return tile_grid;
 }
 
-int get_byte_val(vector<int> byte_arr, int index) {
+std::vector<int> bytes_from_int(int num) {
+    std::vector<int> arr = {0, 0};
+    while (num > 255) {
+        arr[0] += 1;
+        num -= 256;
+    }
+    arr[1] = num;
+    return arr;
+}
+
+
+int get_byte_val(std::vector<int> byte_arr, int index) {
     return byte_arr[index] * 256 + byte_arr[index + 1];
 }
 
-void save_lvl(vector <vector<int> > lvl_data) {
+int Vec2InArray(Vector2 vec2, Vector2 array[18]) {
+    for (int i = 0; i < 19; i++) {
+        if (vec2.x == array[i].x && vec2.y == array[i].y) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+void save_lvl(std::vector <std::vector<int> > lvl_data) {
     int id;
     Tile sav_tile;
 
-    vector<int> bytes{80, 76, 86, 76};
+    std::vector<int> bytes{80, 76, 86, 76};
+
     bytes.insert(bytes.end(), {bytes_from_int(lvl_data[0].size())[0], bytes_from_int(lvl_data[0].size())[1]});
-    // cout << lvl_data.size() << endl;
-    // cout << bytes_from_int(lvl_data.size())[0] << ", " << bytes_from_int(lvl_data.size())[1] << endl;
     bytes.insert(bytes.end(), {bytes_from_int(lvl_data.size())[0], bytes_from_int(lvl_data.size())[1]});
     bytes.insert(bytes.end(), {0, 10, 84, 73, 76, 69});
-    // cout << "\n" << endl;
-    // for (int i = 0; i < bytes.size(); i++) \\\\{
-    //     cout << bytes[i] << " ";
-    // }
+
     for (int y = 0; y < lvl_data.size(); y++) {
         for (int x = 0; x < lvl_data[1].size(); x++) {
             id = lvl_data[y][x];
@@ -126,38 +105,40 @@ void save_lvl(vector <vector<int> > lvl_data) {
             }
         }
     }
+
     bytes.insert(bytes.end(), {255, 255, 83, 80, 82, 84, 255, 255});
     
-    ofstream output("level.lvl", std::ios::binary);
-    vector<signed char> buff_vec;
+
+    std::ofstream output("level.lvl", std::ios::binary);
+    std::vector<signed char> buff_vec;
+    
+
     for (int i = 0; i < bytes.size(); i++) {
         buff_vec.push_back((signed char) bytes[i]);
     }
-    signed char buff_str[bytes.size()];
+
+    signed char buff_str[buff_vec.size()];
+
     for (int i = 0; i < buff_vec.size(); i++) {
         buff_str[i] = buff_vec[i];
     }
+
     output.write((const char*) buff_str, buff_vec.size());
     output.close();
 }
 
-vector<int> bytes_from_int(int num) {
-    vector<int> arr = {0, 0};
-    while (num > 255) {
-        arr[0] += 1;
-        num -= 256;
-    }
-    arr[1] = num;
-    return arr;
+void BeginScissorModeRect(Rectangle rect) {
+    DrawRectangle(rect.x-border, rect.y-border, rect.width+border*2, rect.height+border*2, LIGHTGRAY);
+    BeginScissorMode(rect.x, rect.y, rect.width, rect.height);
 }
 
-Tile checkTile(vector <vector<int> >& level_data, int id, int checkX, int checkY) {
+
+Tile checkTile(std::vector <std::vector<int> >& level_data, int id, int checkX, int checkY) {
     Tile resTile = {id+1, checkX, checkY, 0, 0};
     bool yLoop = true;
     for (int x = checkX; x < level_data[0].size(); x++) {
         if (level_data[checkY][x] == id) {
             resTile.width++;
-            // level_data[checkY][x] = -1;
         } else {
             break;
         }
@@ -179,4 +160,78 @@ Tile checkTile(vector <vector<int> >& level_data, int id, int checkX, int checkY
         }
     }
     return resTile;
+}
+
+
+Vector2 get_size(int width, int height) {
+    SetConfigFlags(FLAG_WINDOW_UNDECORATED);
+    InitWindow(245, 96, "Size");
+    SetTargetFPS(60);
+    Rectangle rect_w;
+    Rectangle rect_h;
+    int key;
+    bool box = 0;
+    SetExitKey(KEY_ENTER);
+    while (!WindowShouldClose()) {
+        rect_w = {8, 8, MeasureText("WIDTH:  ", 30) + 13 + MeasureText(FormatText("%i", width), 30), 40};
+        rect_h = {8, 48, MeasureText("WIDTH:  ", 30) + 13 + MeasureText(FormatText("%i", height), 30), 40};
+
+        if (!box) {
+            key = GetKeyPressed();
+            if (47 < key && key < 59) {
+                width = width * 10 + key - 48;
+                if (width > 65535) {
+                    width = 65535;
+                }
+            }
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                width /= 10;
+            }
+        }
+        if (box) {
+            key = GetKeyPressed();
+            if (47 < key && key < 59) {
+                height = height * 10 + key - 48;
+                if (height > 65535) {
+                    height = 65535;
+                }
+            }
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                height /= 10;
+            }
+        }
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), rect_w)) {
+            box = 0;
+        } else if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), rect_h)) {
+            box = 1;
+        }
+
+        BeginDrawing();
+            ClearBackground(LIGHTGRAY);
+            DrawRectangle(8, 8, 229, 80, RAYWHITE);
+            if (box) {
+                DrawRectangleRec(rect_h, {0, 121, 241, 64});
+            } else {
+                DrawRectangleRec(rect_w, {230, 41, 55, 64});
+            }
+            DrawText("WIDTH:  ", 13, 13, 30, BLACK);
+            DrawText(FormatText("%i", width), MeasureText("WIDTH:  ", 30) + 13, 13, 30, BLACK);
+            DrawRectangleLinesEx(rect_w, 3, RED);
+            DrawText("HEIGHT:", 13, 53, 30, BLACK);
+            DrawText(FormatText("%i", height), MeasureText("WIDTH:  ", 30) + 13, 53, 30, BLACK);
+            DrawRectangleLinesEx(rect_h, 3, BLUE);
+        EndDrawing();
+    }
+    CloseWindow();
+    if (width < 64) {
+        width = 64;
+    }
+    if (height < 48) {
+        height = 48;
+    }
+    Vector2 sizes_arr;
+    sizes_arr.x = width;
+    sizes_arr.y = height;
+    return sizes_arr;
 }
