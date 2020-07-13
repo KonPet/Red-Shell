@@ -1,10 +1,18 @@
 #include "Red_Shell.h"
 
-std::vector <std::vector<int> > load_lvl () {
+std::vector <std::vector<int> > load_lvl (std::string &name) {
+    std::string lvl_name = "";
+    if (name.size() > 0) {
+        lvl_name = name;
+    } else {
+        lvl_name = new_name();
+    }
+
     int width = 0;
     int height = 0;
-    if (FileExists("level.lvl")) {
-        std::ifstream input("level.lvl", std::ios::binary);
+
+    if (name.length() > 0) {
+        std::ifstream input((const char*) lvl_name.c_str(), std::ios::binary);
 
         std::vector<int> bytes(
             (std::istreambuf_iterator<char>(input)),
@@ -22,15 +30,15 @@ std::vector <std::vector<int> > load_lvl () {
             height = get_byte_val(bytes, 6);
         }
     } else {
-        Vector2 sizes = get_size(width, height);
-        width = (int) sizes.x;
-        height = (int) sizes.y;
+        Vector2 dim = get_size(64, 48);
+        width = dim.x;
+        height = dim.y;
     }
 
     std::vector<std::vector<int> > tile_grid(height, std::vector<int> (width, -1));
 
-    if (FileExists("level.lvl")) {
-        std::ifstream input("level.lvl", std::ios::binary);
+    if (name.length() > 0) {
+        std::ifstream input((const char*) lvl_name.c_str(), std::ios::binary);
 
         std::vector<int> bytes(
             (std::istreambuf_iterator<char>(input)),
@@ -54,6 +62,7 @@ std::vector <std::vector<int> > load_lvl () {
             index += 10;
         }
     }
+    name = lvl_name;
     return tile_grid;
 }
 
@@ -82,15 +91,21 @@ int Vec2InArray(Vector2 vec2, Vector2 array[18]) {
 }
 
 
-void save_lvl(std::vector <std::vector<int> > lvl_data) {
+void save_lvl(std::vector <std::vector<int> > lvl_data, std::string& name) {
     int id;
     Tile sav_tile;
 
     std::vector<int> bytes{80, 76, 86, 76};
 
     bytes.insert(bytes.end(), {bytes_from_int(lvl_data[0].size())[0], bytes_from_int(lvl_data[0].size())[1]});
+    // cout << lvl_data.size() << endl;
+    // cout << bytes_from_int(lvl_data.size())[0] << ", " << bytes_from_int(lvl_data.size())[1] << endl;
     bytes.insert(bytes.end(), {bytes_from_int(lvl_data.size())[0], bytes_from_int(lvl_data.size())[1]});
     bytes.insert(bytes.end(), {0, 10, 84, 73, 76, 69});
+    // cout << "\n" << endl;
+    // for (int i = 0; i < bytes.size(); i++) \\\\{
+    //     cout << bytes[i] << " ";
+    // }
 
     for (int y = 0; y < lvl_data.size(); y++) {
         for (int x = 0; x < lvl_data[1].size(); x++) {
@@ -108,8 +123,7 @@ void save_lvl(std::vector <std::vector<int> > lvl_data) {
 
     bytes.insert(bytes.end(), {255, 255, 83, 80, 82, 84, 255, 255});
     
-
-    std::ofstream output("level.lvl", std::ios::binary);
+    std::ofstream output((const char*) name.c_str(), std::ios::binary);
     std::vector<signed char> buff_vec;
     
 
@@ -139,6 +153,7 @@ Tile checkTile(std::vector <std::vector<int> >& level_data, int id, int checkX, 
     for (int x = checkX; x < level_data[0].size(); x++) {
         if (level_data[checkY][x] == id) {
             resTile.width++;
+            // level_data[checkY][x] = -1;
         } else {
             break;
         }
@@ -234,4 +249,69 @@ Vector2 get_size(int width, int height) {
     sizes_arr.x = width;
     sizes_arr.y = height;
     return sizes_arr;
+}
+
+std::string get_name() {
+    SetConfigFlags(!FLAG_WINDOW_UNDECORATED);
+    Image icon = LoadImage("Assets/RedShell.png");
+    InitWindow(768, 512, "Level name");
+    SetWindowIcon(icon);
+    SetTargetFPS(60);
+    Rectangle rect_name;
+    Font font = GetFontDefault();
+    std::string dropped_file;
+
+    SetExitKey(KEY_ENTER);
+
+    // char dropped_file[];
+    int count = 0;
+
+    while (!WindowShouldClose()) {
+        if (IsFileDropped()) {
+            break;
+        }
+
+        BeginDrawing();
+            ClearBackground(LIGHTGRAY);
+            DrawRectangle(8, 8, 752, 496, RAYWHITE);
+            DrawText("Drop a level here or press", 164, 223, 30, SKYBLUE);
+            DrawText("ENTER to make a new one", 176, 289, 30, SKYBLUE);
+        EndDrawing();
+    }
+    std::vector<char> out;
+    if (IsFileDropped()) {
+        dropped_file = GetDroppedFiles(&count)[0];
+    }
+    CloseWindow();
+    return dropped_file;
+}
+
+std::string new_name() {
+    SetConfigFlags(!FLAG_WINDOW_UNDECORATED);
+    Image icon = LoadImage("Assets/RedShell.png");
+    InitWindow(786, 128, "Enter new name");
+    SetWindowIcon(icon);
+    SetExitKey(KEY_ENTER);
+    std::string name = "";
+    int key;
+    int maxChars = 15;
+    int chars = 0;
+    while (!WindowShouldClose()) {
+        key = GetKeyPressed();
+        if (((key > 47 && 59 > key) || (key > 64 && 91 > key) || (key > 96 && 122 > key) || key == 46 || key == 45 || key == 95) && chars < maxChars) {
+            chars++;
+            name += (char) key;
+        }
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            name.pop_back();
+        }
+
+        BeginDrawing();
+        ClearBackground(LIGHTGRAY);
+        DrawRectangle(8, 8, 770, 112, RAYWHITE);
+        DrawText(name.c_str(), 16, 16, 64, RED);
+        EndDrawing();
+    }
+    CloseWindow();
+    return name + ".lvl";
 }

@@ -2,7 +2,24 @@
 
 int main(int argc, char* argv[])
 {
-    std::vector <std::vector<int> > tile_grid = load_lvl();
+    // std::cout << "\n\n___________________________\n\n\n\n";
+    std::string name_in = get_name();
+    std::vector <std::vector<int> > tile_grid = load_lvl(name_in);
+    std::string lvl_name = "Editing ";
+    // std::cout << name_in.c_str() << std::endl;
+    if (name_in.length() > 0) {
+        int it = name_in.length();
+        int len = 0;
+        while (name_in[it] != '\\' && it >= 0) {
+            it--;
+            len++;
+            // std::cout << name_in[it];
+        }
+        for (int i = 0; i < len - 1; i++) {
+            lvl_name += name_in[it + i + 1];
+        }
+        std::cout << lvl_name.c_str() << std::endl;
+    }
 
     int screenWidth = 1248;
     int screenHeight = 800;
@@ -29,6 +46,8 @@ int main(int argc, char* argv[])
     bool x_off_add;
     bool y_off_add;
 
+    Vector2 DragOrigin;
+
     bool left_erase;
     bool right_erase;
     Vector2 t_pos_temp;
@@ -36,7 +55,7 @@ int main(int argc, char* argv[])
     SetExitKey(KEY_ESCAPE);
     Image icon = LoadImage("Assets/RedShell.png");
     SetConfigFlags(!FLAG_WINDOW_UNDECORATED);
-    InitWindow(screenWidth, screenHeight, "Red Shell");
+    InitWindow(screenWidth, screenHeight, lvl_name.c_str());
     SetWindowIcon(icon);
 
     Texture2D tiles[19] = {
@@ -263,8 +282,34 @@ int main(int argc, char* argv[])
             for (int i = 0; i < 18; i++) {
                 tiles[i] = buff_tiles[i];
             }
+            while (offX + 1024 > width * 32) {
+                offX--;
+            }
+            while (offY + 768 > height * 32) {
+                offY--;
+            }
         }
 
+        if (IsMouseButtonPressed(MOUSE_MIDDLE_BUTTON)) {
+            DragOrigin = GetMousePosition();
+        }
+        if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON)) {
+            offX += DragOrigin.x - GetMouseX();
+            offY += DragOrigin.y - GetMouseY();
+            DragOrigin = GetMousePosition();
+            while (offY + 768 > height * 32) {
+                offY--;
+            }
+            while (offY < 0) {
+                offY++;
+            }
+            while (offX < 0) {
+                offX++;
+            }
+            while (offX + 1024 > width * 32) {
+                offX--;
+            }
+        }
         BeginDrawing();
             ClearBackground(RAYWHITE);
 
@@ -339,7 +384,7 @@ int main(int argc, char* argv[])
     }
  
     CloseWindow();
-    save_lvl(tile_grid);
+    save_lvl(tile_grid, name_in);
     
     return 0;
 }
